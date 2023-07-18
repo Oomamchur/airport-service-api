@@ -26,6 +26,9 @@ class Route(models.Model):
     )
     distance = models.IntegerField()
 
+    def __str__(self):
+        return f"{self.source} to {self.destination}"
+
 
 class AirplaneType(models.Model):
     airplane_type = models.CharField(max_length=60)
@@ -40,6 +43,10 @@ class Airplane(models.Model):
     seats_in_row = models.IntegerField()
     airplane_type = models.ForeignKey(AirplaneType, on_delete=models.CASCADE)
 
+    @property
+    def capacity(self):
+        return self.rows * self.seats_in_row
+
     def __str__(self):
         return self.airplane_name
 
@@ -49,3 +56,8 @@ class Flight(models.Model):
     airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE)
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
+
+    crew = models.ManyToManyField(Crew, blank=True)
+
+    def __str__(self):
+        return f"{self.route.source} to {self.route.destination}"
