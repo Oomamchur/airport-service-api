@@ -11,11 +11,11 @@ from user.views import (
 )
 
 router = routers.DefaultRouter()
-router.register("airports", AirportViewSet)
 router.register("crew", CrewViewSet)
-router.register("routes", RouteViewSet)
 router.register("airplane-types", AirplaneTypeViewSet)
 router.register("airplanes", AirplaneViewSet)
+router.register("airports", AirportViewSet)
+router.register("routes", RouteViewSet)
 router.register("flights", FlightViewSet)
 
 urlpatterns = [
