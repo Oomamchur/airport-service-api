@@ -1,54 +1,18 @@
-from rest_framework import viewsets
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from airport_service.models import (
-    Airport,
-    Crew,
-    Route,
-    AirplaneType,
-    Airplane,
-    Flight,
-)
-from airport_service.serializers import (
-    AirportSerializer,
-    CrewSerializer,
-    RouteSerializer,
-    AirplaneTypeSerializer,
-    AirplaneSerializer,
-    FlightSerializer,
-)
+from user.serializers import UserSerializer
 
 
-class CrewViewSet(viewsets.ModelViewSet):
-    queryset = Crew.objects.all()
-    serializer_class = CrewSerializer
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+class CreateUserView(generics.CreateAPIView):
+    serializer_class = UserSerializer
 
 
-class AirportViewSet(viewsets.ModelViewSet):
-    queryset = Airport.objects.all()
-    serializer_class = AirportSerializer
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+class ManageUserView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
-
-class RouteViewSet(viewsets.ModelViewSet):
-    queryset = Route.objects.all()
-    serializer_class = RouteSerializer
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
-
-class AirplaneTypeViewSet(viewsets.ModelViewSet):
-    queryset = AirplaneType.objects.all()
-    serializer_class = AirplaneTypeSerializer
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
-
-class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.all()
-    serializer_class = AirplaneSerializer
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
-
-class FlightViewSet(viewsets.ModelViewSet):
-    queryset = Flight.objects.all()
-    serializer_class = FlightSerializer
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    def get_object(self):
+        return self.request.user
