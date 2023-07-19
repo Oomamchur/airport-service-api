@@ -1,15 +1,21 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ("id", "username", "password", "is_staff", "email")
+        fields = (
+            "id",
+            "email",
+            "password",
+            "is_staff",
+            "first_name",
+            "last_name",
+        )
         read_only_fields = ("id", "is_staff")
-        extra_kwargs = {
-            "password": {"write_only": True, "min_length": 8}
-        }
+        extra_kwargs = {"password": {"write_only": True, "min_length": 8}}
 
     def create(self, validated_data):
         """Create a new user with encrypted password and return it"""
@@ -24,3 +30,25 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+
+
+class AuthTokenSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        if email and password:
+            user = authenticate(email=email, password=password)
+
+            if not user:
+                raise ValidationError(
+                    "Unable to log in with provided credentials."
+                )
+        else:
+            raise ValidationError("Must include 'email' and 'password'.")
+
+        attrs["user"] = user
+        return attrs
