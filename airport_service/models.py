@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -6,6 +8,7 @@ class Crew(models.Model):
     last_name = models.CharField(max_length=60)
 
     class Meta:
+        verbose_name_plural = "crew"
         ordering = ["last_name"]
 
     def __str__(self):
@@ -13,7 +16,7 @@ class Crew(models.Model):
 
 
 class Airport(models.Model):
-    airport_name = models.CharField(max_length=60)
+    airport_name = models.CharField(max_length=60, unique=True)
     closest_big_city = models.CharField(max_length=60)
 
     class Meta:
@@ -34,13 +37,24 @@ class Route(models.Model):
 
     class Meta:
         ordering = ["source"]
+        unique_together = ("source", "destination")
+
+    def clean(self):
+        if self.source == self.destination:
+            raise ValidationError("Source and destination cannot be the same.")
+        if self.distance <= 0:
+            raise ValidationError("Distance should be greater than 0.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.source} to {self.destination}"
 
 
 class AirplaneType(models.Model):
-    airplane_type = models.CharField(max_length=60)
+    airplane_type = models.CharField(max_length=60, unique=True)
 
     class Meta:
         ordering = ["airplane_type"]
@@ -72,10 +86,60 @@ class Flight(models.Model):
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
 
-    crew = models.ManyToManyField(Crew, blank=True)
+    crew = models.ManyToManyField(Crew)
 
     class Meta:
         ordering = ["departure_time"]
 
     def __str__(self):
         return f"{self.route.source} to {self.route.destination}"
+
+
+# class Order(models.Model):
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     user = models.ForeignKey(
+#         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+#     )
+#
+#     def __str__(self) -> str:
+#         return str(self.created_at)
+#
+#     class Meta:
+#         ordering = ["-created_at"]
+#
+#
+# class Ticket(models.Model):
+#     flight = models.ForeignKey(
+#         Flight, on_delete=models.CASCADE, related_name="tickets"
+#     )
+#     order = models.ForeignKey(
+#         Order, on_delete=models.CASCADE, related_name="tickets"
+#     )
+#     row = models.IntegerField()
+#     seat = models.IntegerField()
+
+    # def clean(self) -> None:
+    #     for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
+    #         (self.row, "row", "count_rows"),
+    #         (self.seat, "seat", "count_seats_in_row"),
+    #     ]:
+    #         count_attrs = getattr(
+    #             self.movie_session.cinema_hall, cinema_hall_attr_name
+    #         )
+    #         if not (1 <= ticket_attr_value <= count_attrs):
+    #             raise ValidationError(
+    #                 {
+    #                     ticket_attr_name: f"{ticket_attr_name} number "
+    #                     f"must be in available range: "
+    #                     f"(1, {cinema_hall_attr_name}): "
+    #                     f"(1, {count_attrs})"
+    #                 }
+    #             )
+    #
+    # def __str__(self) -> str:
+    #     return (
+    #         f"{str(self.movie_session)} (row: {self.row}, seat: {self.seat})"
+    #     )
+    #
+    # class Meta:
+    #     unique_together = ("movie_session", "row", "seat")
