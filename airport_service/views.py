@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.db.models import F, Count
 from rest_framework import viewsets
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
@@ -24,6 +25,7 @@ from airport_service.serializers import (
     AirplaneListSerializer,
     FlightListSerializer,
     OrderSerializer,
+    FlightDetailSerializer,
 )
 
 
@@ -40,7 +42,7 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.all()
+    queryset = Airplane.objects.select_related("type")
     serializer_class = AirplaneSerializer
     permission_classes = (IsAdminUser,)
 
@@ -50,7 +52,7 @@ class AirplaneViewSet(viewsets.ModelViewSet):
         return AirplaneSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.select_related("type")
+        queryset = self.queryset
         name = self.request.query_params.get("name")
         type = self.request.query_params.get("type")
         if name:
@@ -69,7 +71,7 @@ class AirportViewSet(viewsets.ModelViewSet):
 
 
 class RouteViewSet(viewsets.ModelViewSet):
-    queryset = Route.objects.all()
+    queryset = Route.objects.select_related("source", "destination")
     serializer_class = RouteSerializer
     permission_classes = (IsAdminUser,)
 
@@ -79,7 +81,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return RouteSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.select_related("source", "destination")
+        queryset = self.queryset
         source = self.request.query_params.get("source")
         destination = self.request.query_params.get("destination")
         if source:
@@ -96,19 +98,21 @@ class RouteViewSet(viewsets.ModelViewSet):
 
 
 class FlightViewSet(viewsets.ModelViewSet):
-    queryset = Flight.objects.all()
+    queryset = Flight.objects.select_related(
+        "airplane", "route__source", "route__destination"
+    )
     serializer_class = FlightSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_serializer_class(self):
         if self.action == "list":
             return FlightListSerializer
+        if self.action == "retrieve":
+            return FlightDetailSerializer
         return FlightSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.select_related(
-            "airplane", "route__source", "route__destination"
-        )
+        queryset = self.queryset
         date = self.request.query_params.get("date")
         source = self.request.query_params.get("source")
         destination = self.request.query_params.get("destination")
@@ -119,14 +123,19 @@ class FlightViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(
                 route__source__closest_big_city__icontains=source
             )
-
         if destination:
             queryset = queryset.filter(
                 route__destination__closest_big_city__icontains=destination
             )
-
+        if self.action == "list":
+            queryset = queryset.annotate(
+                tickets_available=(
+                    F("airplane__rows") * F("airplane__seats_in_row")
+                    - Count("tickets")
+                )
+            )
         if self.action == "retrieve":
-            queryset = self.queryset.prefetch_related("crew")
+            queryset = queryset.prefetch_related("crew")
 
         return queryset
 
