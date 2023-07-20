@@ -158,11 +158,11 @@ class FlightViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(departure_time__date=date)
         if source:
             queryset = queryset.filter(
-                route__source__closest_big_city__icontains=source
+                route__source__name__icontains=source
             )
         if destination:
             queryset = queryset.filter(
-                route__destination__closest_big_city__icontains=destination
+                route__destination__name__icontains=destination
             )
         if self.action == "list":
             queryset = queryset.annotate(
@@ -181,17 +181,17 @@ class FlightViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "source",
                 type=OpenApiTypes.STR,
-                description="Filter by source city(ex. ?source=Ba)",
+                description="Filter by source(ex. ?source=Ba)",
             ),
             OpenApiParameter(
                 "destination",
                 type=OpenApiTypes.STR,
-                description="Filter by destination city(ex. ?destination=Ba)",
+                description="Filter by destination(ex. ?destination=Ba)",
             ),
             OpenApiParameter(
                 "date",
                 type=OpenApiTypes.DATE,
-                description="Filter by datetime(ex. ?date=2022-10-23)"
+                description="Filter by departure_time(ex. ?date=2022-10-23)"
             ),
         ]
     )
