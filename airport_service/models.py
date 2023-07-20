@@ -16,14 +16,14 @@ class Crew(models.Model):
 
 
 class Airport(models.Model):
-    airport_name = models.CharField(max_length=60, unique=True)
+    name = models.CharField(max_length=60, unique=True)
     closest_big_city = models.CharField(max_length=60)
 
     class Meta:
-        ordering = ["airport_name"]
+        ordering = ["name"]
 
     def __str__(self):
-        return self.airport_name
+        return self.name
 
 
 class Route(models.Model):

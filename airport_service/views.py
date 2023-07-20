@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from rest_framework import viewsets
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
@@ -7,7 +8,7 @@ from airport_service.models import (
     Route,
     AirplaneType,
     Airplane,
-    Flight, Order,
+    Flight, Order, Ticket,
 )
 from airport_service.permissions import IsAdminOrIfAuthenticatedReadOnly
 from airport_service.serializers import (
@@ -42,8 +43,8 @@ class AirplaneViewSet(viewsets.ModelViewSet):
             return AirplaneListSerializer
         return AirplaneSerializer
 
-    # def get_queryset(self):
-    #     return self.queryset.select_related("type")
+    def get_queryset(self):
+        return self.queryset.select_related("type")
 
 
 class AirportViewSet(viewsets.ModelViewSet):
@@ -62,14 +63,9 @@ class RouteViewSet(viewsets.ModelViewSet):
             return RouteListSerializer
         return RouteSerializer
 
-    # def get_queryset(self):
-    #     queryset = self.queryset
-    #     queryset = queryset.select_related("source")
-    #     queryset = queryset.select_related("destination")
-    #
-    #     return queryset
-
-
+    def get_queryset(self):
+        queryset = self.queryset.select_related("source", "destination")
+        return queryset
 
 
 class FlightViewSet(viewsets.ModelViewSet):
@@ -82,6 +78,13 @@ class FlightViewSet(viewsets.ModelViewSet):
             return FlightListSerializer
         return FlightSerializer
 
+    def get_queryset(self):
+        queryset = self.queryset.select_related("airplane", "route__source", "route__destination")
+        if self.action == "retrieve":
+            queryset = self.queryset.prefetch_related("crew")
+
+        return queryset
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -89,7 +92,10 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+        queryset = self.queryset.filter(user=self.request.user)
+        queryset = queryset.prefetch_related("tickets__flight")
+
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
