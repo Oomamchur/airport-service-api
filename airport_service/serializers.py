@@ -7,7 +7,9 @@ from airport_service.models import (
     Route,
     AirplaneType,
     Airplane,
-    Flight, Ticket, Order,
+    Flight,
+    Ticket,
+    Order,
 )
 
 
@@ -87,9 +89,10 @@ class TicketSerializer(serializers.ModelSerializer):
         data = super(TicketSerializer, self).validate(attrs)
         if not (1 <= attrs["row"] <= attrs["flight"].airplane.rows):
             raise serializers.ValidationError(
-                f"row should be in range:" f" [1, {attrs['flight'].airplane.rows}]"
+                f"row should be in range:"
+                f" [1, {attrs['flight'].airplane.rows}]"
             )
-        if not (1 <= attrs["seat"] <= attrs['flight'].airplane.seats_in_row):
+        if not (1 <= attrs["seat"] <= attrs["flight"].airplane.seats_in_row):
             raise serializers.ValidationError(
                 f"seat should be in range:"
                 f" [1, {attrs['flight'].airplane.seats_in_row}]"
@@ -114,4 +117,3 @@ class OrderSerializer(serializers.ModelSerializer):
         for ticket_data in tickets_data:
             Ticket.objects.create(order=order, **ticket_data)
         return order
-
