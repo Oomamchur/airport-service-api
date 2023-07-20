@@ -15,7 +15,7 @@ from airport_service.models import (
     Order,
     Route,
 )
-from airport_service.permissions import IsAdminOrIfAuthenticatedReadOnly
+from airport_service.permissions import IsAdminOrReadOnly
 from airport_service.serializers import (
     AirplaneTypeSerializer,
     AirplaneSerializer,
@@ -139,7 +139,7 @@ class FlightViewSet(viewsets.ModelViewSet):
         "airplane", "route__source", "route__destination"
     )
     serializer_class = FlightSerializer
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -167,8 +167,8 @@ class FlightViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             queryset = queryset.annotate(
                 tickets_available=(
-                    F("airplane__rows") * F("airplane__seats_in_row")
-                    - Count("tickets")
+                        F("airplane__rows") * F("airplane__seats_in_row")
+                        - Count("tickets")
                 )
             )
         if self.action == "retrieve":
