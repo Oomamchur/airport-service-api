@@ -98,6 +98,7 @@ class TicketSerializer(serializers.ModelSerializer):
                 f"seat should be in range:"
                 f" [1, {attrs['flight'].airplane.seats_in_row}]"
             )
+        return data
 
     class Meta:
         model = Ticket

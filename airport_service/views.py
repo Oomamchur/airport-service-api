@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
@@ -64,6 +66,23 @@ class AirplaneViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "name",
+                type=OpenApiTypes.STR,
+                description="Filter airplane by name(ex. ?name=bo)",
+            ),
+            OpenApiParameter(
+                "type",
+                type=OpenApiTypes.STR,
+                description="Filter airplane by type(ex. ?type=cargo)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class AirportViewSet(viewsets.ModelViewSet):
     queryset = Airport.objects.all()
@@ -96,6 +115,23 @@ class RouteViewSet(viewsets.ModelViewSet):
             )
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source",
+                type=OpenApiTypes.STR,
+                description="Filter by source city(ex. ?source=Ba)",
+            ),
+            OpenApiParameter(
+                "destination",
+                type=OpenApiTypes.STR,
+                description="Filter by destination city(ex. ?destination=Ba)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class FlightViewSet(viewsets.ModelViewSet):
@@ -140,6 +176,28 @@ class FlightViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source",
+                type=OpenApiTypes.STR,
+                description="Filter by source city(ex. ?source=Ba)",
+            ),
+            OpenApiParameter(
+                "destination",
+                type=OpenApiTypes.STR,
+                description="Filter by destination city(ex. ?destination=Ba)",
+            ),
+            OpenApiParameter(
+                "date",
+                type=OpenApiTypes.DATE,
+                description="Filter by datetime(ex. ?date=2022-10-23)"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -164,3 +222,9 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsAdminUser()]
+
+        return super().get_permissions()
