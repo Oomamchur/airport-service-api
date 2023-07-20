@@ -56,41 +56,6 @@ class AirplaneListSerializer(AirplaneSerializer):
         fields = ("id", "airplane_name", "type", "capacity")
 
 
-class TicketSerializer(serializers.ModelSerializer):
-    def validate(self, attrs):
-        data = super(TicketSerializer, self).validate(attrs)
-        if not (1 <= attrs["row"] <= attrs["flight"].airplane.rows):
-            raise serializers.ValidationError(
-                f"row should be in range:"
-                f" [1, {attrs['flight'].airplane.rows}]"
-            )
-        if not (1 <= attrs["seat"] <= attrs["flight"].airplane.seats_in_row):
-            raise serializers.ValidationError(
-                f"seat should be in range:"
-                f" [1, {attrs['flight'].airplane.seats_in_row}]"
-            )
-
-    class Meta:
-        model = Ticket
-        fields = ("id", "flight", "row", "seat")
-
-
-class OrderSerializer(serializers.ModelSerializer):
-    tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
-
-    class Meta:
-        model = Order
-        fields = ("id", "created_at", "tickets")
-
-    @transaction.atomic
-    def create(self, validated_data) -> Order:
-        tickets_data = validated_data.pop("tickets")
-        order = Order.objects.create(**validated_data)
-        for ticket_data in tickets_data:
-            Ticket.objects.create(order=order, **ticket_data)
-        return order
-
-
 class FlightSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flight
@@ -100,7 +65,6 @@ class FlightSerializer(serializers.ModelSerializer):
             "airplane",
             "departure_time",
             "arrival_time",
-            "crew",
         )
 
 
@@ -121,10 +85,53 @@ class FlightListSerializer(FlightSerializer):
         )
 
 
+class TicketSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        data = super(TicketSerializer, self).validate(attrs)
+        if not (1 <= attrs["row"] <= attrs["flight"].airplane.rows):
+            raise serializers.ValidationError(
+                f"row should be in range:"
+                f" [1, {attrs['flight'].airplane.rows}]"
+            )
+        if not (1 <= attrs["seat"] <= attrs["flight"].airplane.seats_in_row):
+            raise serializers.ValidationError(
+                f"seat should be in range:"
+                f" [1, {attrs['flight'].airplane.seats_in_row}]"
+            )
+
+    class Meta:
+        model = Ticket
+        fields = ("id", "flight", "row", "seat")
+
+
+class TicketListSerializer(TicketSerializer):
+    flight = FlightListSerializer(many=False, read_only=True)
+
+
 class TicketSeatsSerializer(TicketSerializer):
     class Meta:
         model = Ticket
         fields = ("row", "seat")
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ("id", "created_at", "tickets")
+
+    @transaction.atomic
+    def create(self, validated_data) -> Order:
+        tickets_data = validated_data.pop("tickets")
+        order = Order.objects.create(**validated_data)
+        for ticket_data in tickets_data:
+            Ticket.objects.create(order=order, **ticket_data)
+        return order
+
+
+class OrderListSerializer(OrderSerializer):
+    tickets = TicketListSerializer(many=True, read_only=True)
 
 
 class FlightDetailSerializer(FlightSerializer):
