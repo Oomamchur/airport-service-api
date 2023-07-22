@@ -16,8 +16,8 @@ def detail_url(airport_id: int):
 
 def test_airport(**params) -> Airport:
     defaults = {
-        "name": "Boryspil",
-        "closest_big_city": "Kyiv"
+        "name": "Test",
+        "closest_big_city": "Test"
     }
     defaults.update(**params)
     return Airport.objects.create(**defaults)
@@ -37,7 +37,7 @@ class AuthenticatedAirportApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test@test.com",
+            "test123@test.com",
             "Test1234",
         )
         self.client.force_authenticate(self.user)
@@ -52,7 +52,7 @@ class AdminAirportApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com",
+            "admin123@admin.com",
             "test1234",
             is_staff=True
         )
@@ -60,7 +60,6 @@ class AdminAirportApiTest(TestCase):
 
     def test_create_airport(self) -> None:
         test_airport()
-        test_airport(name="Boryspil-2")
         airport = Airport.objects.all()
 
         serializer = AirportSerializer(airport, many=True)

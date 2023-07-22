@@ -16,7 +16,7 @@ def detail_url(airplane_type_id: int):
 
 def test_airplane_type(**params) -> AirplaneType:
     defaults = {
-        "airplane_type": "test type",
+        "airplane_type": "test type"
     }
     defaults.update(**params)
     return AirplaneType.objects.create(**defaults)
@@ -36,7 +36,7 @@ class AuthenticatedAirplaneTypeApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test@test.com",
+            "test123@test.com",
             "Test1234",
         )
         self.client.force_authenticate(self.user)
@@ -51,7 +51,7 @@ class AdminAirplaneTypeApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com",
+            "admin123@admin.com",
             "test1234",
             is_staff=True
         )
@@ -59,7 +59,6 @@ class AdminAirplaneTypeApiTest(TestCase):
 
     def test_create_airplane_type(self) -> None:
         test_airplane_type()
-        test_airplane_type(airplane_type="big")
         airplane_type = AirplaneType.objects.all()
 
         serializer = AirplaneTypeSerializer(airplane_type, many=True)

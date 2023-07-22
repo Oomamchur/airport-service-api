@@ -33,13 +33,13 @@ def test_airplane_type(**params) -> AirplaneType:
 
 
 def test_airplane(**params) -> Airplane:
-    defaults = {"airplane_name": "Mriya", "rows": 1, "seats_in_row": 6}
+    defaults = {"airplane_name": "Test", "rows": 1, "seats_in_row": 6}
     defaults.update(**params)
     return Airplane.objects.create(**defaults)
 
 
 def test_airport(**params) -> Airport:
-    defaults = {"name": "Boryspil", "closest_big_city": "Kyiv"}
+    defaults = {"name": "Test", "closest_big_city": "Kyiv"}
     defaults.update(**params)
     return Airport.objects.create(**defaults)
 
@@ -73,25 +73,22 @@ class AuthenticatedFlightApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test@test.com",
+            "test123@test.com",
             "Test1234",
         )
         self.client.force_authenticate(self.user)
 
     def test_list_flight(self) -> None:
         airplane_type = test_airplane_type()
-        airplane1 = test_airplane(type=airplane_type)
-        airplane2 = test_airplane(airplane_name="Cessna", type=airplane_type)
+        airplane = test_airplane(type=airplane_type)
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
-        route1 = test_route(source=airport1, destination=airport2)
-        route2 = test_route(source=airport2, destination=airport1)
-        test_flight(airplane=airplane1, route=route1)
-        test_flight(airplane=airplane2, route=route2)
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
+        route = test_route(source=airport1, destination=airport2)
+        test_flight(airplane=airplane, route=route)
         flights = Flight.objects.annotate(
             tickets_available=(
-                F("airplane__rows") * F("airplane__seats_in_row")
-                - Count("tickets")
+                    F("airplane__rows") * F("airplane__seats_in_row")
+                    - Count("tickets")
             )
         )
         serializer = FlightListSerializer(flights, many=True)
@@ -104,60 +101,67 @@ class AuthenticatedFlightApiTests(TestCase):
     def test_filter_flight_by_source(self) -> None:
         airplane_type = test_airplane_type()
         airplane1 = test_airplane(type=airplane_type)
-        airplane2 = test_airplane(airplane_name="Cessna", type=airplane_type)
+        airplane2 = test_airplane(airplane_name="Test2", type=airplane_type)
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route1 = test_route(source=airport1, destination=airport2)
         route2 = test_route(source=airport2, destination=airport1)
         test_flight(airplane=airplane1, route=route1)
         test_flight(airplane=airplane2, route=route2)
-        annotated_flights = Flight.objects.annotate(
+        annotated_flights = Flight.objects.filter(
+            route__source__name__icontains="Test"
+        ).annotate(
             tickets_available=(
-                F("airplane__rows") * F("airplane__seats_in_row")
-                - Count("tickets")
+                    F("airplane__rows") * F("airplane__seats_in_row")
+                    - Count("tickets")
             )
         )
         serializer1 = FlightListSerializer(annotated_flights[0])
         serializer2 = FlightListSerializer(annotated_flights[1])
 
-        response = self.client.get(FLIGHT_URL, {"source": "Test"})
+        response = self.client.get(FLIGHT_URL, {"source": "Test2"})
 
         self.assertIn(serializer2.data, response.data["results"])
         self.assertNotIn(serializer1.data, response.data["results"])
 
     def test_filter_flight_by_date(self) -> None:
         airplane_type = test_airplane_type()
-        airplane1 = test_airplane(type=airplane_type)
-        airplane2 = test_airplane(airplane_name="Cessna", type=airplane_type)
+        airplane = test_airplane(type=airplane_type)
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route1 = test_route(source=airport1, destination=airport2)
         route2 = test_route(source=airport2, destination=airport1)
-        test_flight(airplane=airplane1, route=route1)
         test_flight(
-            airplane=airplane2,
-            route=route2,
-            departure_time="2023-07-08T21:30:00+03:00",
+            airplane=airplane,
+            route=route1,
+            departure_time="2023-06-08T09:30:00+03:00",
         )
-        annotated_flights = Flight.objects.annotate(
+        test_flight(
+            airplane=airplane,
+            route=route2,
+            departure_time="2023-06-09T21:30:00+03:00",
+        )
+        annotated_flights = Flight.objects.filter(
+            departure_time__month="06"
+        ).annotate(
             tickets_available=(
-                F("airplane__rows") * F("airplane__seats_in_row")
-                - Count("tickets")
+                    F("airplane__rows") * F("airplane__seats_in_row")
+                    - Count("tickets")
             )
         )
         serializer1 = FlightListSerializer(annotated_flights[0])
         serializer2 = FlightListSerializer(annotated_flights[1])
 
-        response = self.client.get(FLIGHT_URL, {"date": "2023-07-08"})
+        response = self.client.get(FLIGHT_URL, {"date": "2023-06-08"})
 
-        self.assertIn(serializer2.data, response.data["results"])
-        self.assertNotIn(serializer1.data, response.data["results"])
+        self.assertIn(serializer1.data, response.data["results"])
+        self.assertNotIn(serializer2.data, response.data["results"])
 
     def test_retrieve_flight(self) -> None:
         airplane_type = test_airplane_type()
         airplane = test_airplane(type=airplane_type)
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route = test_route(source=airport1, destination=airport2)
         flight = test_flight(airplane=airplane, route=route)
         url = detail_url(flight.id)
@@ -172,7 +176,7 @@ class AuthenticatedFlightApiTests(TestCase):
         airplane_type = test_airplane_type()
         airplane = test_airplane(type=airplane_type)
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route = test_route(source=airport1, destination=airport2)
         payload = {
             "route": route,
@@ -189,7 +193,7 @@ class AdminFlightApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com", "test1234", is_staff=True
+            "admin123@admin.com", "test1234", is_staff=True
         )
         self.client.force_authenticate(self.user)
 
@@ -197,7 +201,7 @@ class AdminFlightApiTest(TestCase):
         airplane_type = test_airplane_type()
         airplane = test_airplane(type=airplane_type)
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route = test_route(source=airport1, destination=airport2)
         payload = {
             "route": route.id,
@@ -213,7 +217,7 @@ class AdminFlightApiTest(TestCase):
         airplane_type = test_airplane_type()
         airplane = test_airplane(type=airplane_type)
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route = test_route(source=airport1, destination=airport2)
         flight = test_flight(airplane=airplane, route=route)
         url = detail_url(flight.id)

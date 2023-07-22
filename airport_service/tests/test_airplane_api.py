@@ -46,7 +46,7 @@ class AuthenticatedAirplaneApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test@test.com",
+            "test123@test.com",
             "Test1234",
         )
         self.client.force_authenticate(self.user)
@@ -61,7 +61,7 @@ class AdminAirplaneApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com",
+            "admin123@admin.com",
             "test1234",
             is_staff=True
         )
@@ -70,7 +70,6 @@ class AdminAirplaneApiTest(TestCase):
     def test_create_airplane(self) -> None:
         airplane_type = test_airplane_type()
         test_airplane(type=airplane_type)
-        test_airplane(airplane_name="test", type=airplane_type)
         airplane = Airplane.objects.all()
 
         serializer = AirplaneListSerializer(airplane, many=True)

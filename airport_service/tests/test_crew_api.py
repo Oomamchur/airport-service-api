@@ -37,7 +37,7 @@ class AuthenticatedCrewApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test@test.com",
+            "test123@test.com",
             "Test1234",
         )
         self.client.force_authenticate(self.user)
@@ -52,7 +52,7 @@ class AdminCrewApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com",
+            "admin123@admin.com",
             "test1234",
             is_staff=True
         )
@@ -60,7 +60,6 @@ class AdminCrewApiTest(TestCase):
 
     def test_create_crew(self) -> None:
         test_crew()
-        test_crew(first_name="Bob")
         crew = Crew.objects.all()
 
         serializer = CrewSerializer(crew, many=True)

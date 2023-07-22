@@ -16,7 +16,7 @@ def detail_url(route_id: int):
 
 def test_airport(**params) -> Airport:
     defaults = {
-        "name": "Boryspil",
+        "name": "Test",
         "closest_big_city": "Kyiv"
     }
     defaults.update(**params)
@@ -45,7 +45,7 @@ class AuthenticatedRouteApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test@test.com",
+            "test123@test.com",
             "Test1234",
         )
         self.client.force_authenticate(self.user)
@@ -60,7 +60,7 @@ class AdminRouteApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com",
+            "admin123@admin.com",
             "test1234",
             is_staff=True
         )
@@ -68,7 +68,7 @@ class AdminRouteApiTest(TestCase):
 
     def test_create_route(self) -> None:
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route1 = test_route(source=airport1, destination=airport2)
         route2 = test_route(source=airport2, destination=airport1)
         routes = Route.objects.all()
@@ -81,7 +81,7 @@ class AdminRouteApiTest(TestCase):
 
     def test_retrieve_route(self) -> None:
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route = test_route(source=airport1, destination=airport2)
         url = detail_url(route.id)
         serializer = RouteSerializer(route)
@@ -93,7 +93,7 @@ class AdminRouteApiTest(TestCase):
 
     def test_update_route(self) -> None:
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route = test_route(source=airport1, destination=airport2)
         url = detail_url(route.id)
         payload = {
@@ -109,7 +109,7 @@ class AdminRouteApiTest(TestCase):
 
     def test_delete_route(self) -> None:
         airport1 = test_airport()
-        airport2 = test_airport(name="Test", closest_big_city="Test")
+        airport2 = test_airport(name="Test2", closest_big_city="Test2")
         route = test_route(source=airport1, destination=airport2)
         url = detail_url(route.id)
 
